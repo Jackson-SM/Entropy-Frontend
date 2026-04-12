@@ -11,7 +11,7 @@ import type { FormEvent } from 'react';
 import './App.css';
 
 export default function App() {
-  const { query, setQuery, isSearching, hasResults, handleSearch } = useSearch();
+  const { query, setQuery, isSearching, hasResults, results, handleSearch } = useSearch();
   const [currentView, setCurrentView] = useState('search');
 
   // Wrapper around handleSearch to also ensure we are in the 'search' view
@@ -100,7 +100,7 @@ export default function App() {
 
             {hasResults && !isSearching && currentView === 'search' && (
               <motion.div key="search_results" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
-                <SearchResults />
+                <SearchResults results={results} />
               </motion.div>
             )}
 

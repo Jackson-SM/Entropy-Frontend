@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { MOCK_RESULTS } from '../../data/mockData';
 import { SynthesizedAnswer } from './SynthesizedAnswer';
 
-export function SearchResults() {
+export function SearchResults({ results }: { results: any[] }) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -13,7 +13,7 @@ export function SearchResults() {
 
       <h4 style={{ color: 'var(--text-muted)', marginBottom: '1rem', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Retrieved Contexts</h4>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {MOCK_RESULTS.map((res, index) => (
+        {(results || []).map((res, index) => (
           <motion.div 
             key={res.id}
             initial={{ opacity: 0, x: -20 }}

@@ -1,5 +1,6 @@
-import { Search, Sparkles, Settings, Activity } from 'lucide-react';
+import { Search, Sparkles, Settings, Activity, LogOut } from 'lucide-react';
 import { NavItem } from './NavItem';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
   activeView: string;
@@ -7,6 +8,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeView, onViewChange }: SidebarProps) {
+  const { user, logout } = useAuth();
+
   return (
     <aside style={{
       width: 'var(--sidebar-width)',
@@ -42,10 +45,17 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
       <div className="glass-card" style={{ padding: '1rem', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(to right, #4f46e5, #9333ea)', flexShrink: 0 }} />
-          <div style={{ overflow: 'hidden' }}>
-            <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>Jackson</div>
+          <div style={{ overflow: 'hidden', flex: 1 }}>
+            <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.email || 'User'}</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pro Member</div>
           </div>
+          <button 
+            onClick={logout} 
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem' }}
+            title="Log Out"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
         
         <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)' }} />

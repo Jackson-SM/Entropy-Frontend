@@ -16,7 +16,9 @@ export function IntegrationStatus() {
         {INTEGRATIONS.map((app) => (
           <motion.div 
             key={app.id}
-            whileHover={{ y: -2, scale: 1.02 }}
+            onClick={() => {
+              window.location.href = `http://localhost:8000/api/connect/${app.id}`;
+            }}
             style={{ 
               padding: '1rem', 
               borderRadius: 'var(--radius-sm)', 

@@ -6,18 +6,36 @@ export function useSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [hasResults, setHasResults] = useState(false);
 
-  const handleSearch = (e: FormEvent) => {
+  const [results, setResults] = useState<any[]>([]);
+
+  const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
     
     setIsSearching(true);
     setHasResults(false);
     
-    // Simulate search delay
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem('entropy_token');
+      const res = await fetch('http://localhost:8000/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ query })
+      });
+
+      if (!res.ok) throw new Error('Search failed');
+      const data = await res.json();
+      setResults(data.results || []);
+    } catch (error) {
+      console.error(error);
+      setResults([]);
+    } finally {
       setIsSearching(false);
       setHasResults(true);
-    }, 1500);
+    }
   };
 
   return {
@@ -25,6 +43,7 @@ export function useSearch() {
     setQuery,
     isSearching,
     hasResults,
+    results,
     handleSearch
   };
 }
