@@ -1,8 +1,12 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { apiFetch } from '../api/client';
 
 interface User {
+  id?: string;
   email: string;
+  name?: string | null;
+  picture?: string | null;
 }
 
 interface AuthContextType {
@@ -19,34 +23,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(localStorage.getItem('entropy_token'));
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (token) {
-      try {
-        const decoded = jwtDecode<{sub: string, exp: number}>(token);
-        if (decoded.exp * 1000 < Date.now()) {
-          logout();
-        } else {
-          setUser({ email: decoded.sub });
-        }
-      } catch {
-        logout();
-      }
-    } else {
-      setUser(null);
-    }
-    setIsLoading(false);
-  }, [token]);
-
-  const login = (newToken: string) => {
-    localStorage.setItem('entropy_token', newToken);
-    setToken(newToken);
-  };
-
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('entropy_token');
     setToken(null);
     setUser(null);
     window.location.href = '/login';
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function init() {
+      if (!token) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const decoded = jwtDecode<{ sub: string; exp: number }>(token);
+        if (decoded.exp * 1000 < Date.now()) {
+          logout();
+          return;
+        }
+        setUser({ email: decoded.sub });
+        setIsLoading(false);
+        try {
+          const me = await apiFetch<{ id: string; email: string; name: string | null; picture: string | null }>(
+            '/api/auth/me'
+          );
+          if (!cancelled) {
+            setUser({
+              id: me.id,
+              email: me.email,
+              name: me.name,
+              picture: me.picture,
+            });
+          }
+        } catch {
+          /* keep JWT-derived user */
+        }
+      } catch {
+        logout();
+        setIsLoading(false);
+      }
+    }
+
+    init();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, logout]);
+
+  const login = (newToken: string) => {
+    localStorage.setItem('entropy_token', newToken);
+    setToken(newToken);
   };
 
   if (isLoading) return null;
