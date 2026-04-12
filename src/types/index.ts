@@ -1,11 +1,18 @@
-import type { ReactNode } from 'react';
-
 export interface SearchResult {
-  id: number;
-  source: 'github' | 'discord' | 'gmail' | string;
-  icon: ReactNode;
+  id: string | number;
+  source: 'gmail' | 'gdrive' | 'notion' | 'slack' | 'github';
   title: string;
-  date: string;
   text: string;
-  relevance: number;
+  date: string;
+  url?: string;
+  relevance?: number;
+}
+
+export interface Integration {
+  id: string;
+  name: string;
+  color: string;
+  status: 'connected' | 'not_connected' | 'syncing' | 'error';
+  last_sync?: string | null;
+  items_synced?: number;
 }

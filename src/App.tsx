@@ -11,7 +11,7 @@ import type { FormEvent } from 'react';
 import './App.css';
 
 export default function App() {
-  const { query, setQuery, isSearching, hasResults, results, handleSearch } = useSearch();
+  const { query, setQuery, isSearching, hasResults, results, synthesizedAnswer, handleSearch } = useSearch();
   const [currentView, setCurrentView] = useState('search');
 
   // Wrapper around handleSearch to also ensure we are in the 'search' view
@@ -100,26 +100,16 @@ export default function App() {
 
             {hasResults && !isSearching && currentView === 'search' && (
               <motion.div key="search_results" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
-                <SearchResults results={results} />
+                <SearchResults results={results} synthesizedAnswer={synthesizedAnswer} />
               </motion.div>
             )}
 
             {currentView === 'activity' && (
               <motion.div key="activity_view" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
-                 <div style={{marginTop: '3rem'}}>
-                   <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>Activity Graph</h2>
-                   <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-                      <ActivityGraph />
-                      <div className="glass-card bento-item" style={{ flex: '1 1 300px' }}>
-                        <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', fontWeight: 600 }}>Top Data Sources</h3>
-                        <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
-                          <div style={{display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)'}}><span>GitHub</span> <span style={{color: 'var(--accent-primary)', fontWeight: 600}}>12.4K</span></div>
-                          <div style={{display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)'}}><span>Discord</span> <span style={{color: 'var(--text-secondary)'}}>8.1K</span></div>
-                          <div style={{display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)'}}><span>Notion</span> <span style={{color: 'var(--text-secondary)'}}>3.2K</span></div>
-                        </div>
-                      </div>
-                   </div>
-                 </div>
+                <div style={{marginTop: '3rem'}}>
+                  <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>Activity</h2>
+                  <ActivityGraph />
+                </div>
               </motion.div>
             )}
 
