@@ -1,4 +1,4 @@
-import { Search, Activity, Settings, User } from 'lucide-react';
+import { Search, Activity, Database, Settings, User } from 'lucide-react';
 
 interface MobileNavProps {
   activeView: string;
@@ -6,10 +6,11 @@ interface MobileNavProps {
 }
 
 const items = [
-  { id: 'search', icon: Search, label: 'Search' },
-  { id: 'activity', icon: Activity, label: 'Activity' },
+  { id: 'search',     icon: Search,   label: 'Search' },
+  { id: 'activity',   icon: Activity, label: 'Activity' },
+  { id: 'sources',    icon: Database, label: 'Data' },
   { id: 'connectors', icon: Settings, label: 'Sources' },
-  { id: 'settings', icon: User, label: 'Settings' },
+  { id: 'settings',   icon: User,     label: 'Profile' },
 ] as const;
 
 export function MobileNav({ activeView, onViewChange }: MobileNavProps) {

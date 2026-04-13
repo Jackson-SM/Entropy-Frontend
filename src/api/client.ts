@@ -32,6 +32,10 @@ export async function apiFetch<T>(
   return response.json() as Promise<T>;
 }
 
+export async function apiGet<T>(path: string): Promise<T> {
+  return apiFetch<T>(path, { method: 'GET' });
+}
+
 export function getConnectorUrl(connectorId: string): string {
   return `${BASE_URL}/api/connectors/${connectorId}/connect`;
 }

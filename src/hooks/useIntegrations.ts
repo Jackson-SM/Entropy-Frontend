@@ -1,18 +1,37 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getIntegrationStatus, syncConnector } from '../api/integrations';
+import { clearBrowseCache } from './useBrowseData';
 import type { Integration } from '../types';
+
+const FAST_POLL_MS = 3000;   // while any connector is syncing
+const SLOW_POLL_MS = 30000;  // idle state
 
 export function useIntegrations() {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncingId, setSyncingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const prevIntegrationsRef = useRef<Integration[]>([]);
 
   const fetchStatus = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await getIntegrationStatus();
+
+      // Detect sync completion (syncing → connected) and invalidate browse cache
+      const prev = prevIntegrationsRef.current;
+      if (prev.length > 0) {
+        data.forEach(current => {
+          const previous = prev.find(p => p.id === current.id);
+          if (previous?.status === 'syncing' && current.status === 'connected') {
+            clearBrowseCache(current.id);
+          }
+        });
+      }
+      prevIntegrationsRef.current = data;
+
       setIntegrations(data);
+      setError(null);
     } catch {
       setError('Failed to load integration status');
     } finally {
@@ -20,23 +39,43 @@ export function useIntegrations() {
     }
   }, []);
 
+  // Auto-poll: fast when any connector is syncing, slow otherwise
+  useEffect(() => {
+    const isSyncing = integrations.some((i) => i.status === 'syncing');
+    const interval = isSyncing ? FAST_POLL_MS : SLOW_POLL_MS;
+
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(fetchStatus, interval);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [integrations, fetchStatus]);
+
+  // Initial fetch
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
 
   const sync = useCallback(
     async (id: string) => {
-      setSyncingId(id);
+      // Optimistically mark as syncing so polling kicks in immediately
+      setIntegrations((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, status: 'syncing' } : i))
+      );
       try {
         const result = await syncConnector(id);
-        await fetchStatus();
+        // Fetch fresh status a moment after the background task kicks off
+        setTimeout(fetchStatus, 500);
         return result;
-      } finally {
-        setSyncingId(null);
+      } catch (err) {
+        // Revert optimistic update on error
+        await fetchStatus();
+        throw err;
       }
     },
     [fetchStatus]
   );
 
-  return { integrations, loading, syncingId, error, sync, refetch: fetchStatus };
+  return { integrations, loading, error, sync, refetch: fetchStatus };
 }

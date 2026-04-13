@@ -48,7 +48,7 @@ function StatusBadge({ status }: { status: Integration['status'] }) {
 }
 
 export function IntegrationStatus() {
-  const { integrations, loading, syncingId, sync } = useIntegrations();
+  const { integrations, loading, sync } = useIntegrations();
   const toast = useToast();
 
   const handleConnect = (id: string) => {
@@ -57,8 +57,8 @@ export function IntegrationStatus() {
 
   const handleSync = async (id: string) => {
     try {
-      const result = await sync(id);
-      toast.success(`Synced ${result.synced} items from ${id}`);
+      await sync(id);
+      toast.success(`Sync started for ${id} — check back shortly.`);
     } catch {
       toast.error(`Failed to sync ${id}. Try reconnecting.`);
     }
@@ -107,7 +107,7 @@ export function IntegrationStatus() {
     }}>
       {integrations.map((integration, index) => {
         const isConnected = integration.status === 'connected';
-        const isSyncing = syncingId === integration.id;
+        const isSyncing = integration.status === 'syncing';
 
         return (
           <motion.div

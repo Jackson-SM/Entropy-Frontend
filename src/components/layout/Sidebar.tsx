@@ -1,4 +1,4 @@
-import { Search, Sparkles, Settings, Activity, LogOut, User } from 'lucide-react';
+import { Search, Sparkles, Settings, Activity, LogOut, User, Database } from 'lucide-react';
 import { NavItem } from './NavItem';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -59,7 +59,8 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
         </div>
         <NavItem icon={<Search size={17} />} label="Search" active={activeView === 'search'} onClick={() => onViewChange('search')} />
         <NavItem icon={<Activity size={17} />} label="Activity" active={activeView === 'activity'} onClick={() => onViewChange('activity')} />
-        <NavItem icon={<Settings size={17} />} label="Data Sources" active={activeView === 'connectors'} onClick={() => onViewChange('connectors')} />
+        <NavItem icon={<Database size={17} />} label="Your Data" active={activeView === 'sources'} onClick={() => onViewChange('sources')} />
+        <NavItem icon={<Settings size={17} />} label="Connectors" active={activeView === 'connectors'} onClick={() => onViewChange('connectors')} />
         <NavItem icon={<User size={17} />} label="Settings" active={activeView === 'settings'} onClick={() => onViewChange('settings')} />
       </nav>
 

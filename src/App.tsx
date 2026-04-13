@@ -8,6 +8,7 @@ import { HomeDashboard } from './components/dashboard/HomeDashboard';
 import { ActivityGraph } from './components/dashboard/ActivityGraph';
 import { IntegrationStatus } from './components/dashboard/IntegrationStatus';
 import { SettingsPage } from './components/settings/SettingsPage';
+import { SourceBrowser } from './components/sources/SourceBrowser';
 import { useSearch } from './hooks/useSearch';
 import type { FormEvent } from 'react';
 import './App.css';
@@ -148,10 +149,16 @@ export default function App() {
               </motion.div>
             )}
 
+            {currentView === 'sources' && (
+              <motion.div key="sources_view" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <SourceBrowser />
+              </motion.div>
+            )}
+
             {currentView === 'connectors' && (
               <motion.div key="connectors_view" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <div style={{ marginTop: '2rem' }}>
-                  <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', marginBottom: '1.5rem' }}>Data Sources</h2>
+                  <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', marginBottom: '1.5rem' }}>Connectors</h2>
                   <IntegrationStatus />
                 </div>
               </motion.div>
