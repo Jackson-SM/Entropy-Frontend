@@ -1,22 +1,29 @@
-import { Search, Sparkles, Settings, Activity, LogOut, User, Database } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Search, Sparkles, Settings, Activity, LogOut, User, Database, Clock, Sun, Moon, Maximize2 } from 'lucide-react';
 import { NavItem } from './NavItem';
+import { NotificationCenter } from '../ui/NotificationCenter';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../hooks/useTheme';
 
 interface SidebarProps {
   activeView: string;
-  onViewChange: (view: string) => void;
+  onToggleFocus?: () => void;
 }
 
-export function Sidebar({ activeView, onViewChange }: SidebarProps) {
+export function Sidebar({ activeView, onToggleFocus }: SidebarProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { resolvedTheme, setTheme } = useTheme();
 
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'User';
+
+  const go = (path: string) => navigate(path);
 
   return (
     <aside className="sidebar-desktop" style={{
       width: 'var(--sidebar-width)',
-      borderRight: '1px solid rgba(255, 255, 255, 0.04)',
-      background: 'rgba(12, 13, 18, 0.85)',
+      borderRight: '1px solid var(--border-subtle)',
+      background: 'var(--bg-panel)',
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
       padding: '1.75rem 1.25rem',
@@ -32,11 +39,8 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem', paddingLeft: '0.5rem' }}>
         <div style={{
           background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
-          padding: '0.45rem',
-          borderRadius: '10px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          padding: '0.45rem', borderRadius: '10px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 4px 12px var(--accent-glow)',
         }}>
           <Sparkles size={18} color="white" />
@@ -47,97 +51,92 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
       {/* Navigation */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
         <div style={{
-          fontSize: '0.625rem',
-          color: 'var(--text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          fontWeight: 600,
-          paddingLeft: '1rem',
-          marginBottom: '0.5rem',
+          fontSize: '0.625rem', color: 'var(--text-muted)', textTransform: 'uppercase',
+          letterSpacing: '0.1em', fontWeight: 600, paddingLeft: '1rem', marginBottom: '0.5rem',
         }}>
           Menu
         </div>
-        <NavItem icon={<Search size={17} />} label="Search" active={activeView === 'search'} onClick={() => onViewChange('search')} />
-        <NavItem icon={<Activity size={17} />} label="Activity" active={activeView === 'activity'} onClick={() => onViewChange('activity')} />
-        <NavItem icon={<Database size={17} />} label="Your Data" active={activeView === 'sources'} onClick={() => onViewChange('sources')} />
-        <NavItem icon={<Settings size={17} />} label="Connectors" active={activeView === 'connectors'} onClick={() => onViewChange('connectors')} />
-        <NavItem icon={<User size={17} />} label="Settings" active={activeView === 'settings'} onClick={() => onViewChange('settings')} />
+        <NavItem icon={<Search size={17} />} label="Search" active={activeView === 'search'} onClick={() => go('/')} />
+        <NavItem icon={<Activity size={17} />} label="Activity" active={activeView === 'activity'} onClick={() => go('/activity')} />
+        <NavItem icon={<Database size={17} />} label="Your Data" active={activeView === 'sources'} onClick={() => go('/data')} />
+        <NavItem icon={<Settings size={17} />} label="Connectors" active={activeView === 'connectors'} onClick={() => go('/connectors')} />
+        <NavItem icon={<Clock size={17} />} label="History" active={activeView === 'history'} onClick={() => go('/history')} />
+        <NavItem icon={<User size={17} />} label="Settings" active={activeView === 'settings'} onClick={() => go('/settings')} />
       </nav>
 
-      {/* User Panel */}
-      <div style={{
-        padding: '1rem',
-        marginTop: 'auto',
-        borderRadius: 'var(--radius-md)',
-        background: 'rgba(255, 255, 255, 0.03)',
-        border: '1px solid rgba(255, 255, 255, 0.04)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-          {user?.picture ? (
-            <img
-              src={user.picture}
-              alt=""
-              style={{
-                width: 34, height: 34,
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '2px solid rgba(255,255,255,0.08)',
-                flexShrink: 0,
-              }}
-            />
-          ) : (
-            <div style={{
-              width: 34, height: 34,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.8rem', fontWeight: 700, color: '#fff', flexShrink: 0,
-            }}>
-              {displayName.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div style={{ overflow: 'hidden', flex: 1 }}>
-            <div style={{
-              fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            }}>
-              {displayName}
-            </div>
-            <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Free Plan</div>
-          </div>
+      {/* Bottom controls */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: 'auto' }}>
+        {/* Theme + Notifications row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '0.5rem' }}>
           <button
-            onClick={logout}
-            style={{
-              background: 'transparent', border: 'none',
-              color: 'var(--text-muted)', cursor: 'pointer',
-              padding: '0.35rem', borderRadius: '6px',
-              display: 'flex', alignItems: 'center',
-              transition: 'all 150ms',
-            }}
-            title="Sign Out"
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            className="btn-icon"
+            title={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}
           >
-            <LogOut size={15} />
+            {resolvedTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+          <NotificationCenter />
+          {onToggleFocus && (
+            <button onClick={onToggleFocus} className="btn-icon" title="Focus mode">
+              <Maximize2 size={16} />
+            </button>
+          )}
         </div>
 
+        {/* User Panel */}
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          paddingTop: '0.6rem',
-          borderTop: '1px solid rgba(255,255,255,0.05)',
+          padding: '1rem', borderRadius: 'var(--radius-md)',
+          background: 'rgba(128, 128, 128, 0.06)',
+          border: '1px solid var(--border-subtle)',
         }}>
-          <span style={{
-            fontSize: '0.625rem', color: 'var(--text-muted)',
-            textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600,
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            {user?.picture ? (
+              <img src={user.picture} alt="" style={{
+                width: 34, height: 34, borderRadius: '50%', objectFit: 'cover',
+                border: '2px solid var(--border-muted)', flexShrink: 0,
+              }} />
+            ) : (
+              <div style={{
+                width: 34, height: 34, borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.8rem', fontWeight: 700, color: '#fff', flexShrink: 0,
+              }}>
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div style={{ overflow: 'hidden', flex: 1 }}>
+              <div style={{
+                fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
+                {displayName}
+              </div>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Free Plan</div>
+            </div>
+            <button onClick={logout} className="btn-icon" title="Sign Out">
+              <LogOut size={15} />
+            </button>
+          </div>
+
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            paddingTop: '0.6rem', borderTop: '1px solid var(--border-subtle)',
           }}>
-            Status
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <div style={{
-              width: 6, height: 6, borderRadius: '50%',
-              background: 'var(--color-success)',
-              boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)',
-            }} />
-            <span style={{ fontSize: '0.6875rem', color: 'var(--color-success)', fontWeight: 500 }}>Online</span>
+            <span style={{
+              fontSize: '0.625rem', color: 'var(--text-muted)',
+              textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600,
+            }}>
+              Status
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{
+                width: 6, height: 6, borderRadius: '50%',
+                background: 'var(--color-success)',
+                boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)',
+              }} />
+              <span style={{ fontSize: '0.6875rem', color: 'var(--color-success)', fontWeight: 500 }}>Online</span>
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getIntegrationStatus, syncConnector } from '../api/integrations';
 import { clearBrowseCache } from './useBrowseData';
+import { pushNotification } from './useNotifications';
 import type { Integration } from '../types';
 
 const FAST_POLL_MS = 3000;   // while any connector is syncing
@@ -25,6 +26,18 @@ export function useIntegrations() {
           const previous = prev.find(p => p.id === current.id);
           if (previous?.status === 'syncing' && current.status === 'connected') {
             clearBrowseCache(current.id);
+            pushNotification({
+              type: 'sync_complete',
+              title: `${current.name} synced`,
+              message: `${current.items_synced?.toLocaleString() ?? 0} items indexed successfully.`,
+            });
+          }
+          if (previous?.status === 'syncing' && current.status === 'error') {
+            pushNotification({
+              type: 'sync_error',
+              title: `${current.name} sync failed`,
+              message: 'Something went wrong during sync. Try again.',
+            });
           }
         });
       }

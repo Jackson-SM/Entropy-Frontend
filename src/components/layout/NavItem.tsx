@@ -19,7 +19,7 @@ export function NavItem({ icon, label, active = false, onClick }: NavItemProps) 
         borderRadius: 'var(--radius-sm)',
         cursor: 'pointer',
         background: active ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-        color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+        color: active ? 'var(--accent-primary)' : 'var(--text-muted)',
         fontWeight: active ? 600 : 400,
         fontSize: '0.875rem',
         fontFamily: 'var(--font-body)',
@@ -31,7 +31,7 @@ export function NavItem({ icon, label, active = false, onClick }: NavItemProps) 
       }}
       onMouseEnter={(e) => {
         if (!active) {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+          e.currentTarget.style.background = 'var(--bg-panel-hover)';
           e.currentTarget.style.color = 'var(--text-secondary)';
         }
       }}

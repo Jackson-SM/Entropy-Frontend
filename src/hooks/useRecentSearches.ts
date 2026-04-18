@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useReducer } from 'react';
 
+export interface SearchEntry {
+  query: string;
+  timestamp: number;
+}
+
 const STORAGE_KEY = 'entropy_recent_searches';
-const MAX = 8;
+const MAX = 100;
 
 const listeners = new Set<() => void>();
 
@@ -9,18 +14,27 @@ function notify() {
   listeners.forEach((l) => l());
 }
 
-function read(): string[] {
+function read(): SearchEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item: unknown) => {
+      if (typeof item === 'string') {
+        return { query: item, timestamp: Date.now() };
+      }
+      if (item && typeof item === 'object' && 'query' in item) {
+        return item as SearchEntry;
+      }
+      return null;
+    }).filter((x): x is SearchEntry => x !== null);
   } catch {
     return [];
   }
 }
 
-function write(next: string[]) {
+function write(next: SearchEntry[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   notify();
 }
@@ -41,14 +55,15 @@ export function useRecentSearches() {
     };
   }, []);
 
-  const recentSearches = read();
+  const entries = read();
+  const recentSearches = entries.map(e => e.query);
 
   const addSearch = useCallback((query: string) => {
     const q = query.trim();
     if (!q) return;
     const prev = read();
-    const without = prev.filter((s) => s !== q);
-    write([q, ...without].slice(0, MAX));
+    const without = prev.filter((s) => s.query !== q);
+    write([{ query: q, timestamp: Date.now() }, ...without].slice(0, MAX));
   }, []);
 
   const clearSearches = useCallback(() => {
@@ -57,8 +72,8 @@ export function useRecentSearches() {
 
   const removeSearch = useCallback((query: string) => {
     const prev = read();
-    write(prev.filter((s) => s !== query));
+    write(prev.filter((s) => s.query !== query));
   }, []);
 
-  return { recentSearches, addSearch, clearSearches, removeSearch };
+  return { recentSearches, entries, addSearch, clearSearches, removeSearch };
 }

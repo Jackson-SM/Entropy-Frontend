@@ -1,8 +1,44 @@
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Database, Link2, Clock, Zap } from 'lucide-react';
 import { ActivityGraph } from './ActivityGraph';
 import { SuggestedQueries } from './SuggestedQueries';
+import { BookmarkedResults } from './BookmarkedResults';
+import { OnboardingCard } from './OnboardingCard';
 import { useIntegrations } from '../../hooks/useIntegrations';
+
+function AnimatedCounter({ value, duration = 1200 }: { value: string; duration?: number }) {
+  const num = parseInt(value.replace(/[^0-9]/g, ''), 10);
+  const isNumeric = !isNaN(num) && /^\d/.test(value);
+  const [display, setDisplay] = useState(isNumeric ? '0' : value);
+  const startTime = useRef<number | null>(null);
+  const rafId = useRef(0);
+
+  useEffect(() => {
+    if (!isNumeric) {
+      setDisplay(value);
+      return;
+    }
+
+    const suffix = value.replace(/^[\d,]+/, '');
+    startTime.current = null;
+
+    const tick = (ts: number) => {
+      if (!startTime.current) startTime.current = ts;
+      const elapsed = ts - startTime.current;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(eased * num);
+      setDisplay(current.toLocaleString() + suffix);
+      if (progress < 1) rafId.current = requestAnimationFrame(tick);
+    };
+
+    rafId.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId.current);
+  }, [value, num, isNumeric, duration]);
+
+  return <>{display}</>;
+}
 
 interface Props {
   onSelectQuery: (query: string) => void;
@@ -52,6 +88,19 @@ export function HomeDashboard({ onSelectQuery }: Props) {
     },
   ];
 
+  if (!loading && connectedCount === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={{ width: '100%', marginTop: '1.5rem' }}
+      >
+        <OnboardingCard />
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -99,7 +148,7 @@ export function HomeDashboard({ onSelectQuery }: Props) {
             </div>
             <div>
               <div style={{ fontSize: '1.25rem', fontWeight: 700, lineHeight: 1.2, color: 'var(--text-primary)' }}>
-                {value}
+                <AnimatedCounter value={String(value)} />
               </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500, letterSpacing: '0.02em' }}>
                 {label}
@@ -109,7 +158,7 @@ export function HomeDashboard({ onSelectQuery }: Props) {
         ))}
       </div>
 
-      {/* Activity + Suggestions */}
+      {/* Activity + Suggestions + Bookmarks */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
@@ -118,6 +167,8 @@ export function HomeDashboard({ onSelectQuery }: Props) {
         <ActivityGraph />
         <SuggestedQueries onSelect={onSelectQuery} />
       </div>
+
+      <BookmarkedResults />
     </motion.div>
   );
 }

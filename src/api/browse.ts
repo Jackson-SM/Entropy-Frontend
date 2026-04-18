@@ -77,3 +77,43 @@ export async function fetchGitHubItems(
 ): Promise<{ repo: string; type: string; items: GitHubItem[] }> {
   return apiGet(`/api/connectors/github/items?repo=${encodeURIComponent(repo)}&item_type=${itemType}`);
 }
+
+export interface NotionPage {
+  id: string;
+  title: string;
+  icon?: string;
+  url: string;
+  last_edited: string;
+  type: 'page' | 'database';
+}
+
+export interface SlackChannel {
+  id: string;
+  name: string;
+  is_private: boolean;
+  member_count: number;
+  topic?: string;
+}
+
+export interface SlackMessage {
+  id: string;
+  text: string;
+  user: string;
+  channel: string;
+  timestamp: string;
+  url?: string;
+}
+
+export async function fetchNotionPages(): Promise<{ pages: NotionPage[] }> {
+  return apiGet('/api/connectors/notion/pages');
+}
+
+export async function fetchSlackChannels(): Promise<{ channels: SlackChannel[] }> {
+  return apiGet('/api/connectors/slack/channels');
+}
+
+export async function fetchSlackMessages(
+  channel: string,
+): Promise<{ messages: SlackMessage[] }> {
+  return apiGet(`/api/connectors/slack/messages?channel=${encodeURIComponent(channel)}`);
+}

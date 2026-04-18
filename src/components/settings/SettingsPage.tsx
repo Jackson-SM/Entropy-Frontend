@@ -2,11 +2,12 @@ import { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   GitBranch, Mail, Hash, HardDrive, FileText,
-  LogOut, History, ChevronDown, AlertTriangle, Shield, Keyboard,
+  LogOut, History, ChevronDown, AlertTriangle, Shield, Keyboard, Palette, Sun, Moon, Monitor,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useIntegrations } from '../../hooks/useIntegrations';
 import { useRecentSearches } from '../../hooks/useRecentSearches';
+import { useTheme } from '../../hooks/useTheme';
 import { useToast } from '../ui/Toast';
 import type { Integration } from '../../types';
 
@@ -27,6 +28,7 @@ export function SettingsPage() {
   const { user, logout } = useAuth();
   const { integrations, loading } = useIntegrations();
   const { clearSearches } = useRecentSearches();
+  const { theme, setTheme } = useTheme();
   const toast = useToast();
   const [dangerOpen, setDangerOpen] = useState(false);
 
@@ -137,6 +139,43 @@ export function SettingsPage() {
               })}
             </div>
           )}
+        </motion.section>
+
+        {/* Theme */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.08 }}
+          className="glass-panel"
+          style={sectionStyle}
+        >
+          <h3 style={{ fontSize: '0.75rem', marginBottom: '1rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Palette size={13} /> Appearance
+          </h3>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {([
+              { value: 'light' as const, icon: <Sun size={14} />, label: 'Light' },
+              { value: 'dark' as const, icon: <Moon size={14} />, label: 'Dark' },
+              { value: 'system' as const, icon: <Monitor size={14} />, label: 'System' },
+            ]).map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setTheme(opt.value)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.4rem',
+                  padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)',
+                  fontSize: '0.8125rem', fontWeight: 500, fontFamily: 'var(--font-body)',
+                  cursor: 'pointer',
+                  border: `1.5px solid ${theme === opt.value ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
+                  background: theme === opt.value ? 'rgba(99,102,241,0.1)' : 'transparent',
+                  color: theme === opt.value ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                  transition: 'all 150ms',
+                }}
+              >
+                {opt.icon} {opt.label}
+              </button>
+            ))}
+          </div>
         </motion.section>
 
         {/* Shortcuts */}

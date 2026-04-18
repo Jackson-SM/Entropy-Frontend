@@ -1,18 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, HardDrive, GitBranch, ExternalLink, ChevronRight, ArrowLeft, RefreshCw, Folder, FileText, AlertCircle, Search } from 'lucide-react';
+import { Mail, HardDrive, GitBranch, ExternalLink, ChevronRight, ArrowLeft, RefreshCw, Folder, FileText, AlertCircle, Search, Hash } from 'lucide-react';
 import {
   fetchGmailMessages, fetchDriveFiles, fetchGitHubRepos, fetchGitHubItems,
+  fetchNotionPages, fetchSlackChannels, fetchSlackMessages,
   type GmailMessage, type DriveFile, type GitHubRepo, type GitHubItem,
+  type NotionPage, type SlackChannel, type SlackMessage,
 } from '../../api/browse';
 import { useBrowseData, useAgeLabel } from '../../hooks/useBrowseData';
 
-type SourceTab = 'gmail' | 'gdrive' | 'github';
+type SourceTab = 'gmail' | 'gdrive' | 'github' | 'notion' | 'slack';
 
 const TABS: { id: SourceTab; label: string; icon: React.ReactNode; color: string }[] = [
   { id: 'gmail',  label: 'Gmail',        icon: <Mail size={15} />,      color: '#ea4335' },
   { id: 'gdrive', label: 'Google Drive', icon: <HardDrive size={15} />, color: '#4285f4' },
   { id: 'github', label: 'GitHub',       icon: <GitBranch size={15} />, color: '#2ea043' },
+  { id: 'notion', label: 'Notion',       icon: <FileText size={15} />,  color: '#9b9b9b' },
+  { id: 'slack',  label: 'Slack',        icon: <Hash size={15} />,      color: '#e01e5a' },
 ];
 
 // ─── Shared utils ────────────────────────────────────────────────────────────
@@ -430,6 +434,149 @@ function GitHubBrowser() {
   );
 }
 
+// ─── Notion Browser ─────────────────────────────────────────────────────────
+
+function NotionBrowser() {
+  const fetcher = useCallback(() => fetchNotionPages(), []);
+  const { data, loading, refreshing, error, fetchedAt, refresh } = useBrowseData<{
+    pages: NotionPage[];
+  }>('notion:pages', fetcher);
+
+  const pages = data?.pages ?? [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <CacheBar fetchedAt={fetchedAt} refreshing={refreshing} onRefresh={refresh} />
+
+      {loading ? <LoadingRows /> : error ? <EmptyState message={error} /> : pages.length === 0 ? (
+        <EmptyState message="No Notion pages found. Connect Notion and sync first." />
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.5rem' }}>
+          {pages.map(page => (
+            <motion.a
+              key={page.id}
+              href={page.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="glass-card-static"
+              style={{ padding: '0.875rem', cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
+              whileHover={{ scale: 1.02, background: 'var(--bg-panel-solid)' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                <span style={{ fontSize: '1rem' }}>{page.icon || '📄'}</span>
+                <span style={{ fontSize: '0.8125rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {page.title || 'Untitled'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{page.type}</span>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{formatDate(page.last_edited)}</span>
+              </div>
+            </motion.a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Slack Browser ──────────────────────────────────────────────────────────
+
+function SlackBrowser() {
+  const [selectedChannel, setSelectedChannel] = useState<SlackChannel | null>(null);
+
+  const channelFetcher = useCallback(() => fetchSlackChannels(), []);
+  const { data: chData, loading: chLoading, refreshing: chRefreshing, error: chError, fetchedAt: chFetchedAt, refresh: refreshCh } =
+    useBrowseData<{ channels: SlackChannel[] }>('slack:channels', channelFetcher);
+  const channels = chData?.channels ?? [];
+
+  const msgFetcher = useCallback(
+    () => fetchSlackMessages(selectedChannel?.id ?? ''),
+    [selectedChannel?.id],
+  );
+  const { data: msgData, loading: msgLoading, refreshing: msgRefreshing, fetchedAt: msgFetchedAt, refresh: refreshMsg } =
+    useBrowseData<{ messages: SlackMessage[] }>(
+      selectedChannel ? `slack:msgs:${selectedChannel.id}` : '__skip__',
+      msgFetcher,
+    );
+  const messages = msgData?.messages ?? [];
+
+  if (selectedChannel) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button className="btn-ghost" onClick={() => setSelectedChannel(null)} style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', gap: '0.3rem' }}>
+            <ArrowLeft size={13} /> Channels
+          </button>
+          <span style={{ fontWeight: 700, fontSize: '0.9375rem' }}>#{selectedChannel.name}</span>
+        </div>
+
+        <CacheBar fetchedAt={msgFetchedAt} refreshing={msgRefreshing} onRefresh={refreshMsg} />
+
+        {msgLoading ? <LoadingRows /> : messages.length === 0 ? (
+          <EmptyState message="No messages found in this channel." />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+            {messages.map(msg => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                style={{
+                  padding: '0.75rem 1rem', background: 'var(--bg-elevated)',
+                  borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>{msg.user}</span>
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{formatDate(msg.timestamp)}</span>
+                </div>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{msg.text}</div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <CacheBar fetchedAt={chFetchedAt} refreshing={chRefreshing} onRefresh={refreshCh} />
+      {chLoading ? <LoadingRows /> : chError ? <EmptyState message={chError} /> : channels.length === 0 ? (
+        <EmptyState message="No Slack channels found. Connect Slack first." />
+      ) : (
+        channels.map((ch, i) => (
+          <motion.div
+            key={ch.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.03 }}
+            className="glass-card-static"
+            style={{ padding: '0.875rem 1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+            onClick={() => setSelectedChannel(ch)}
+            whileHover={{ background: 'var(--bg-panel-solid)' }}
+          >
+            <Hash size={16} color="#e01e5a" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{ch.name}</div>
+              {ch.topic && (
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {ch.topic}
+                </div>
+              )}
+            </div>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{ch.member_count} members</span>
+            <ChevronRight size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          </motion.div>
+        ))
+      )}
+    </div>
+  );
+}
+
 // ─── Main SourceBrowser component ────────────────────────────────────────────
 
 export function SourceBrowser() {
@@ -479,6 +626,8 @@ export function SourceBrowser() {
           {activeTab === 'gmail'  && <GmailBrowser />}
           {activeTab === 'gdrive' && <DriveBrowser />}
           {activeTab === 'github' && <GitHubBrowser />}
+          {activeTab === 'notion' && <NotionBrowser />}
+          {activeTab === 'slack'  && <SlackBrowser />}
         </motion.div>
       </AnimatePresence>
     </div>
